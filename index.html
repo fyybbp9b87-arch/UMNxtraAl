@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UMNXtraAI</title>
+
+<style>
+
+:root{
+--bg:#0b0f14;
+--panel:#121922;
+--red:#ff3048;
+--green:#00ff99;
+}
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+html,body{
+height:100%;
+overflow:hidden;
+font-family:Arial;
+background:var(--bg);
+color:white;
+}
+
+/* SIDEBAR */
+#sidebar{
+position:fixed;
+top:0;
+left:0;
+bottom:0;
+width:210px;
+background:#0f141a;
+padding:60px 10px;
+display:flex;
+flex-direction:column;
+gap:8px;
+transition:0.25s;
+z-index:200;
+}
+
+#sidebar.closed{
+transform:translateX(-100%);
+}
+
+.sidebtn{
+padding:10px;
+border:none;
+border-radius:10px;
+background:#1a222c;
+color:white;
+font-size:13px;
+}
+
+/* TOPBAR */
+#topbar{
+position:fixed;
+top:0;
+left:0;
+right:0;
+height:50px;
+display:flex;
+align-items:center;
+gap:10px;
+padding:0 10px;
+background:#0f141a;
+z-index:300;
+}
+
+#toggle{
+width:36px;
+height:36px;
+border:none;
+border-radius:10px;
+background:linear-gradient(135deg,var(--red),var(--green));
+color:white;
+font-size:18px;
+}
+
+/* CHAT */
+#chat{
+flex:1;
+overflow-y:auto;
+padding:55px 8px 70px;
+display:flex;
+flex-direction:column;
+gap:8px;
+max-width:100%;
+}
+
+.msg{
+padding:10px;
+border-radius:10px;
+font-size:14px;
+max-width:95%;
+word-break:break-word;
+}
+
+.user{
+align-self:flex-end;
+background:rgba(255,48,72,0.15);
+}
+
+.ai{
+align-self:flex-start;
+background:rgba(255,255,255,0.05);
+}
+
+/* INPUT */
+#bottom{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+padding:6px;
+background:#0f141a;
+}
+
+#inputwrap{
+display:flex;
+gap:6px;
+}
+
+textarea{
+flex:1;
+height:40px;
+border:none;
+outline:none;
+border-radius:10px;
+padding:8px;
+font-size:14px;
+background:#1a222c;
+color:white;
+}
+
+button{
+border:none;
+border-radius:10px;
+padding:8px 10px;
+font-size:12px;
+color:white;
+cursor:pointer;
+}
+
+#send{
+background:linear-gradient(135deg,var(--red),var(--green));
+}
+
+#imgbtn{
+background:#1a222c;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="closed">
+
+<button class="sidebtn">📰 News</button>
+<button class="sidebtn">⚽ Sports</button>
+<button class="sidebtn">🌦 Weather</button>
+
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+<!-- TOPBAR -->
+<div id="topbar">
+<button id="toggle">☰</button>
+</div>
+
+<!-- CHAT -->
+<div id="chat"></div>
+
+<!-- INPUT -->
+<div id="bottom">
+<div id="inputwrap">
+
+<textarea id="input"></textarea>
+
+<button id="send">Send</button>
+<button id="imgbtn">Img</button>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+const sidebar=document.getElementById("sidebar");
+
+document.getElementById("toggle").onclick=()=>{
+sidebar.classList.toggle("closed");
+};
+
+const chat=document.getElementById("chat");
+const input=document.getElementById("input");
+
+function add(t,c){
+const d=document.createElement("div");
+d.className="msg "+c;
+d.innerHTML=t;
+chat.appendChild(d);
+chat.scrollTop=chat.scrollHeight;
+}
+
+/* CHAT */
+document.getElementById("send").onclick=async()=>{
+const text=input.value.trim();
+if(!text)return;
+
+add(text,"user");
+input.value="";
+
+const r=await fetch("/api/chat",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({messages:[{role:"user",content:text}]})
+});
+
+const d=await r.json();
+add(d.reply,"ai");
+};
+
+/* IMAGE */
+document.getElementById("imgbtn").onclick=async()=>{
+const text=input.value.trim();
+if(!text)return;
+
+add(text,"user");
+input.value="";
+
+const r=await fetch("/api/image",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({prompt:text})
+});
+
+const d=await r.json();
+
+if(d.image){
+add(`<img src="${d.image}" style="width:100%;border-radius:10px">`,"ai");
+}else{
+add("Image failed","ai");
+}
+};
+
+</script>
+
+</body>
+</html>
